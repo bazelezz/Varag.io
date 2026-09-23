@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ВАРЯГ — Тактические игры в Екатеринбурге</title>
+
+<style>
+/* ============================================
+   ЦВЕТА
+   ============================================ */
+:root{
+  --bg:        #0a0a0a;
+  --bg-2:      #121212;
+  --surface:   #1a1a1a;
+  --text:      #ffffff;
+  --muted:     #7a7a7a;
+  --line:      #262626;
+  --red:       #e10600;
+  --red-glow:  rgba(225,6,0,.5);
+  --white:     #ffffff;
+
+  --font-display: 'Druk Wide', 'Monument Extended', 'Arial Black', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ============================================
+   БАЗА
+   ============================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-display);
+  overflow-x:hidden;
+  cursor:none;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--red);color:#fff}
+
+/* ШУМ ПОВЕРХ ВСЕГО */
+body::before{
+  content:'';position:fixed;inset:0;
+  pointer-events:none;z-index:9998;
+  opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================
+   КУРСОР-ПРИЦЕЛ
+   ============================================ */
+.cursor{
+  position:fixed;width:20px;height:20px;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:width .25s cubic-bezier(.7,0,.3,1),height .25s cubic-bezier(.7,0,.3,1);
+}
+.cursor-ring{
+  position:absolute;inset:0;
+  border:1.5px solid var(--red);
+  border-radius:50%;
+  transition:transform .25s,background .25s;
+}
+.cursor-dot{
+  position:absolute;left:50%;top:50%;
+  width:4px;height:4px;background:var(--red);
+  border-radius:50%;transform:translate(-50%,-50%);
+}
+.cursor.hover .cursor-ring{transform:scale(2.2);background:rgba(225,6,0,.12)}
+
+/* ============================================
+   NAV
+   ============================================ */
+.nav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;
+  padding:24px 4vw;
+  display:flex;justify-content:space-between;align-items:center;
+  mix-blend-mode:difference;
+  font-family:var(--font-mono);
+  font-size:12px;letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.nav-logo{
+  font-family:var(--font-display);
+  font-weight:900;font-size:22px;letter-spacing:.1em;
+  display:flex;align-items:center;gap:10px;
+}
+.nav-logo::before{
+  content:'';width:10px;height:10px;background:var(--red);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{50%{opacity:.3}}
+.nav-phone{color:inherit;text-decoration:none;transition:opacity .2s}
+.nav-phone:hover{opacity:.5}
+
+/* ============================================
+   HERO
+   ============================================ */
+.hero{
+  min-height:100vh;
+  padding:120px 4vw 60px;
+  position:relative;
+  display:grid;
+  grid-template-rows:1fr auto;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 40%, rgba(225,6,0,.18), transparent 60%),
+    radial-gradient(ellipse 60% 80% at 20% 80%, rgba(225,6,0,.08), transparent 60%);
+}
+.hero-grid-lines{
+  position:absolute;inset:0;z-index:0;opacity:.15;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+.hero-inner{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;justify-content:center;
+  max-width:1600px;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--font-mono);
+  font-size:12px;letter-spacing:.3em;
+  color:var(--red);
+  margin-bottom:32px;
+  text-transform:uppercase;
+  width:fit-content;
+}
+.hero-eyebrow .blink{
+  width:8px;height:8px;background:var(--red);
+  border-radius:50%;
+  animation:pulse 1.2s infinite;
+}
+.hero-title{
+  font-size:clamp(60px,13vw,220px);
+  line-height:.85;
+  font-weight:900;
+  letter-spacing:-.045em;
+  text-transform:uppercase;
+}
+.hero-title .stroke{
+  -webkit-text-stroke:2.5px var(--white);
+  color:transparent;
+}
+.hero-title .red{color:var(--red);position:relative;display:inline-block}
+.hero-title .red::after{
+  content:'';position:absolute;left:0;bottom:8%;
+  width:100%;height:4px;background:var(--red);
+  transform:scaleX(0);transform-origin:left;
+  animation:sweep 1.2s .8s cubic-bezier(.7,0,.3,1) forwards;
+}
+@keyframes sweep{to{transform:scaleX(1)}}
+
+.hero-bottom{
+  position:relative;z-index:2;
+  display:grid;
+  grid-template-columns:1.2fr 1fr auto;
+  gap:48px;
+  align-items:end;
+  margin-top:60px;
+  padding-top:40px;
+  border-top:1px solid var(--line);
+}
+.hero-desc{
+  font-family:var(--font-mono);
+  font-size:13px;line-height:1.7;
+  color:var(--muted);
+  max-width:420px;
+  letter-spacing:.02em;
+}
+.hero-desc b{color:var(--white);font-weight:400}
+.hero-stats{display:flex;gap:40px}
+.stat{}
+.stat-num{
+  font-size:44px;font-weight:900;
+  line-height:1;letter-spacing:-.03em;
+}
+.stat-num span{color:var(--red)}
+.stat-label{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:.25em;
+  color:var(--muted);margin-top:8px;
+  text-transform:uppercase;
+}
+.scroll-hint{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.3em;
+  color:var(--muted);text-transform:uppercase;
+  writing-mode:vertical-rl;
+  align-self:end;
+  display:flex;align-items:center;gap:12px;
+}
+.scroll-hint::after{
+  content:'';width:1px;height:60px;background:var(--red);
+  animation:slide 2s infinite;
+}
+@keyframes slide{0%,100%{transform:translateY(0)}50%{transform:translateY(20px)}}
+
+/* ============================================
+   MARQUEE
+   ============================================ */
+.marquee{
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:28px 0;
+  overflow:hidden;
+  background:var(--bg-2);
+  display:flex;
+  white-space:nowrap;
+}
+.marquee-track{
+  display:flex;gap:60px;
+  animation:scroll 30s linear infinite;
+  padding-right:60px;
+}
+.marquee span{
+  font-size:clamp(24px,3vw,42px);
+  font-weight:900;letter-spacing:-.02em;
+  text-transform:uppercase;
+  display:flex;align-items:center;gap:60px;
+}
+.marquee span::after{
+  content:'✕';color:var(--red);font-size:.7em;
+}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+/* ============================================
+   СЕКЦИИ
+   ============================================ */
+.section{padding:140px 4vw;position:relative}
+.section-head{
+  display:flex;justify-content:space-between;align-items:end;
+  margin-bottom:80px;flex-wrap:wrap;gap:32px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:32px;
+}
+.section-num{
+  font-family:var(--font-mono);
+  font-size:12px;letter-spacing:.3em;
+  color:var(--red);text-transform:uppercase;
+  margin-bottom:20px;
+}
+.section-title{
+  font-size:clamp(40px,6.5vw,110px);
+  text-transform:uppercase;
+  line-height:.9;letter-spacing:-.04em;
+}
+.section-title em{
+  font-style:normal;
+  -webkit-text-stroke:2px var(--red);
+  color:transparent;
+}
+.section-meta{
+  font-family:var(--font-mono);
+  font-size:12px;letter-spacing:.2em;
+  color:var(--muted);text-transform:uppercase;
+  max-width:280px;line-height:1.8;
+}
+
+/* ============================================
+   ПОЛИГОНЫ — крупные карточки
+   ============================================ */
+.fields{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+}
+.field{
+  position:relative;
+  aspect-ratio:3/4;
+  background:var(--surface);
+  border:1px solid var(--line);
+  padding:32px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;
+  cursor:none;
+  transition:transform .5s cubic-bezier(.7,0,.3,1),border-color .3s;
+}
+.field::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg, transparent 40%, rgba(225,6,0,.85) 100%);
+  transform:translateY(100%);
+  transition:transform .6s cubic-bezier(.7,0,.3,1);
+  z-index:1;
+}
+.field::after{
+  content:'';position:absolute;
+  top:0;right:0;
+  width:60px;height:60px;
+  background:var(--red);
+  clip-path:polygon(100% 0, 0 0, 100% 100%);
+  transform:translate(30px,-30px);
+  transition:transform .4s;
+  z-index:2;
+}
+.field:hover{
+  transform:translateY(-8px);
+  border-color:var(--red);
+}
+.field:hover::before{transform:translateY(0)}
+.field:hover::after{transform:translate(0,0)}
+
+.field-top{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:start}
+.field-id{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.2em;
+  color:var(--muted);
+}
+.field-live{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:.2em;
+  color:var(--red);
+  display:flex;align-items:center;gap:6px;
+  padding:6px 10px;
+  border:1px solid var(--red);
+  text-transform:uppercase;
+}
+.field-live .dot{
+  width:6px;height:6px;background:var(--red);border-radius:50%;
+  animation:pulse 1.2s infinite;
+}
+.field-bottom{position:relative;z-index:3}
+.field-name{
+  font-size:clamp(28px,3vw,44px);
+  font-weight:900;text-transform:uppercase;
+  letter-spacing:-.03em;line-height:.95;
+  transition:color .4s;
+}
+.field:hover .field-name{color:var(--white)}
+.field-addr{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.05em;
+  color:var(--muted);
+  margin-top:12px;
+  transition:color .4s;
+}
+.field:hover .field-addr{color:rgba(255,255,255,.8)}
+.field-arrow{
+  position:absolute;right:32px;bottom:32px;z-index:3;
+  font-size:32px;color:var(--white);
+  opacity:0;transform:translateX(-20px);
+  transition:opacity .4s,transform .4s;
+}
+.field:hover .field-arrow{opacity:1;transform:translateX(0)}
+
+/* ============================================
+   ВЫЕЗД — большой блок
+   ============================================ */
+.trip{
+  grid-column:span 3;
+  aspect-ratio:auto;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  padding:60px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:60px;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+}
+.trip::before{
+  content:'ВЫЕЗД';position:absolute;
+  right:-40px;top:50%;transform:translateY(-50%);
+  font-size:280px;font-weight:900;
+  -webkit-text-stroke:2px var(--line);
+  color:transparent;
+  letter-spacing:-.05em;
+  line-height:1;pointer-events:none;
+}
+.trip h3{
+  font-size:clamp(36px,5vw,72px);
+  text-transform:uppercase;
+  line-height:.95;letter-spacing:-.03em;
+  margin-bottom:24px;
+  position:relative;z-index:2;
+}
+.trip h3 em{
+  font-style:normal;
+  -webkit-text-stroke:2px var(--red);color:transparent;
+}
+.trip p{
+  font-family:var(--font-mono);
+  font-size:13px;line-height:1.8;
+  color:var(--muted);max-width:480px;
+  position:relative;z-index:2;
+}
+
+/* ============================================
+   КНОПКИ
+   ============================================ */
+.btn{
+  display:inline-flex;align-items:center;gap:14px;
+  padding:22px 40px;
+  background:var(--red);
+  color:var(--white);
+  font-family:var(--font-display);
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  border:none;
+  font-size:13px;
+  position:relative;
+  overflow:hidden;
+  cursor:none;
+  transition:transform .3s;
+  text-decoration:none;
+  width:fit-content;
+}
+.btn span{position:relative;z-index:2;display:flex;align-items:center;gap:14px}
+.btn::after{
+  content:'';position:absolute;inset:0;
+  background:var(--white);
+  transform:translateY(101%);
+  transition:transform .45s cubic-bezier(.7,0,.3,1);
+  z-index:1;
+}
+.btn:hover{color:var(--red);transform:translateY(-3px)}
+.btn:hover::after{transform:translateY(0)}
+.btn-arrow{
+  display:inline-block;
+  transition:transform .3s;
+}
+.btn:hover .btn-arrow{transform:translateX(6px)}
+
+/* ============================================
+   ТАРИФЫ — жёсткие плитки
+   ============================================ */
+.tariffs{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+.tariff{
+  background:var(--bg-2);
+  padding:48px 32px;
+  position:relative;
+  transition:background .35s;
+  cursor:none;
+  display:flex;flex-direction:column;
+  min-height:460px;
+}
+.tariff:hover{background:var(--surface)}
+.tariff.hit{
+  background:var(--red);
+}
+.tariff.hit:hover{background:var(--red)}
+.tariff.hit *{color:var(--white) !important}
+.tariff-tag{
+  position:absolute;top:0;right:0;
+  background:var(--white);color:var(--red);
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:.2em;
+  padding:8px 14px;text-transform:uppercase;
+  font-weight:700;
+}
+.tariff-name{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.3em;
+  color:var(--red);margin-bottom:32px;
+  text-transform:uppercase;
+}
+.tariff.hit .tariff-name{color:rgba(255,255,255,.8)}
+.tariff-price{
+  font-size:clamp(44px,4.5vw,64px);
+  font-weight:900;
+  letter-spacing:-.04em;line-height:1;
+  margin-bottom:8px;
+}
+.tariff-price small{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.2em;
+  color:var(--muted);display:block;margin-bottom:12px;
+  font-weight:400;
+}
+.tariff.hit .tariff-price small{color:rgba(255,255,255,.7)}
+.tariff-list{
+  list-style:none;margin-top:auto;
+  padding-top:32px;
+  border-top:1px solid var(--line);
+  font-family:var(--font-mono);
+  font-size:12px;line-height:2.2;
+  color:var(--muted);
+}
+.tariff.hit .tariff-list{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.9)}
+.tariff-list li::before{
+  content:'//';margin-right:10px;color:var(--red);
+}
+.tariff.hit .tariff-list li::before{color:var(--white)}
+
+/* ============================================
+   КАЛЬКУЛЯТОР — терминал
+   ============================================ */
+.calc{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+}
+.calc-left{
+  background:var(--bg-2);
+  padding:60px;
+}
+.calc-right{
+  background:var(--surface);
+  padding:60px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;
+  overflow:hidden;
+}
+.calc-right::before{
+  content:'';position:absolute;
+  top:-50%;right:-50%;
+  width:100%;height:200%;
+  background:radial-gradient(circle, rgba(225,6,0,.15), transparent 60%);
+  pointer-events:none;
+}
+.calc-row{margin-bottom:48px;position:relative}
+.calc-label{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.25em;
+  color:var(--muted);
+  margin-bottom:18px;
+  display:flex;justify-content:space-between;
+  text-transform:uppercase;
+}
+.calc-label b{color:var(--red);font-weight:700;font-size:14px}
+input[type=range]{
+  width:100%;height:2px;
+  background:var(--line);
+  -webkit-appearance:none;appearance:none;
+  outline:none;cursor:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:24px;height:24px;
+  background:var(--red);
+  border-radius:0;
+  cursor:none;
+  border:none;
+  box-shadow:0 0 0 6px rgba(225,6,0,.15);
+  transition:box-shadow .2s;
+}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 10px rgba(225,6,0,.25)}
+input[type=range]::-moz-range-thumb{
+  width:24px;height:24px;background:var(--red);
+  border:none;border-radius:0;cursor:none;
+}
+.calc-price{
+  font-size:clamp(56px,7vw,104px);
+  font-weight:900;
+  letter-spacing:-.05em;
+  line-height:1;position:relative;z-index:2;
+}
+.calc-price small{
+  font-size:11px;color:var(--muted);
+  letter-spacing:.3em;font-family:var(--font-mono);
+  display:block;margin-bottom:20px;font-weight:400;
+}
+.calc-price span{color:var(--red)}
+.calc-right .btn{margin-top:40px;position:relative;z-index:2}
+
+/* ============================================
+   CTA
+   ============================================ */
+.cta{
+  padding:160px 4vw;
+  background:var(--red);
+  color:var(--white);
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.cta::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(-45deg, transparent 0 80px, rgba(0,0,0,.06) 80px 82px);
+}
+.cta::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center, transparent 20%, rgba(0,0,0,.3) 100%);
+  pointer-events:none;
+}
+.cta h2{
+  font-size:clamp(56px,11vw,180px);
+  text-transform:uppercase;
+  line-height:.85;letter-spacing:-.05em;
+  position:relative;z-index:2;
+  margin-bottom:60px;
+}
+.cta h2 em{
+  font-style:normal;
+  -webkit-text-stroke:3px var(--white);color:transparent;
+}
+.cta-phone{
+  font-size:clamp(32px,6vw,80px);
+  font-weight:900;
+  font-family:var(--font-mono);
+  letter-spacing:-.03em;
+  position:relative;z-index:2;
+  display:inline-block;
+  margin-bottom:48px;
+  text-decoration:none;color:var(--white);
+  border-bottom:4px solid var(--white);
+  padding-bottom:10px;
+  transition:transform .3s;
+}
+.cta-phone:hover{transform:translateY(-4px)}
+.cta .btn{
+  background:var(--white);color:var(--red);
+  position:relative;z-index:2;
+}
+.cta .btn::after{background:var(--bg)}
+.cta .btn:hover{color:var(--white)}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.footer{
+  padding:100px 4vw 40px;
+  background:var(--bg-2);
+  border-top:4px solid var(--red);
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:.12em;
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:60px;
+  color:var(--muted);
+}
+.footer-brand{
+  font-family:var(--font-display);
+  font-weight:900;font-size:64px;
+  letter-spacing:-.03em;line-height:1;
+  color:var(--white);
+  margin-bottom:20px;
+}
+.footer-brand span{color:var(--red)}
+.footer-col h4{
+  font-family:var(--font-display);
+  font-size:12px;color:var(--white);
+  letter-spacing:.25em;margin-bottom:24px;
+  text-transform:uppercase;
+}
+.footer-col p{line-height:2.2}
+.footer-col a{color:var(--white);text-decoration:none;transition:color .2s}
+.footer-col a:hover{color:var(--red)}
+.footer-bottom{
+  grid-column:1/-1;
+  border-top:1px solid var(--line);
+  padding-top:32px;margin-top:40px;
+  display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:20px;
+  font-size:10px;letter-spacing:.25em;
+  text-transform:uppercase;
+}
+
+/* ============================================
+   АДАПТИВ
+   ============================================ */
+@media (max-width:1100px){
+  .fields{grid-template-columns:1fr 1fr}
+  .trip{grid-column:span 2}
+  .tariffs{grid-template-columns:1fr 1fr}
+  .footer{grid-template-columns:1fr 1fr;gap:40px}
+  .hero-bottom{grid-template-columns:1fr 1fr}
+  .scroll-hint{display:none}
+}
+@media (max-width:768px){
+  body{cursor:auto}
+  .cursor{display:none}
+  .section{padding:80px 5vw}
+  .hero{padding:100px 5vw 40px}
+  .hero-title{font-size:clamp(48px,14vw,90px)}
+  .hero-bottom{grid-template-columns:1fr;gap:32px}
+  .hero-stats{gap:24px;flex-wrap:wrap}
+  .stat-num{font-size:32px}
+  .fields{grid-template-columns:1fr}
+  .trip{grid-column:span 1;grid-template-columns:1fr;padding:40px}
+  .trip::before{font-size:120px;right:-20px}
+  .tariffs{grid-template-columns:1fr}
+  .calc{grid-template-columns:1fr}
+  .calc-left,.calc-right{padding:40px}
+  .footer{grid-template-columns:1fr;gap:32px}
+  .footer-brand{font-size:44px}
+  .nav{padding:16px 5vw}
+  .nav-logo{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- КУРСОР -->
+<div class="cursor" id="cursor">
+  <div class="cursor-ring"></div>
+  <div class="cursor-dot"></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">ВАРЯГ</div>
+  <a href="tel:+73433722772" class="nav-phone">+7 343 372-27-72</a>
+</nav>
+
+<!-- ============================================
+     HERO
+     ============================================ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <span class="blink"></span>
+      ЕКАТЕРИНБУРГ · УРАЛМАШ · ЭЛЬМАШ · ЗЕНИТ
+    </div>
+
+    <h1 class="hero-title">
+      ИГРАЙ<br>
+      <span class="stroke">ЖЁСТКО.</span><br>
+      <span class="red">ПОБЕЖДАЙ</span> ЧИСТО.
+    </h1>
+  </div>
+
+  <div class="hero-bottom">
+    <p class="hero-desc">
+      Пейнтбол и лазертаг в Екатеринбурге. <b>3 оборудованных полигона,
+      выездные игры по области.</b> Экипировка, маркеры, шары, судья — всё включено.
+    </p>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">3<span>+</span></div>
+        <div class="stat-label">Полигона</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">400<span>₽</span></div>
+        <div class="stat-label">От / игрок</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">24<span>/7</span></div>
+        <div class="stat-label">Приём заявок</div>
+      </div>
+    </div>
+
+    <div class="scroll-hint">Скролл</div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>ПЕЙНТБОЛ</span>
+    <span>ЛАЗЕРТАГ</span>
+    <span>КОРПОРАТИВЫ</span>
+    <span>ДНИ РОЖДЕНИЯ</span>
+    <span>ТУРНИРЫ</span>
+    <span>ВЫЕЗДНЫЕ ИГРЫ</span>
+    <span>ПЕЙНТБОЛ</span>
+    <span>ЛАЗЕРТАГ</span>
+    <span>КОРПОРАТИВЫ</span>
+    <span>ДНИ РОЖДЕНИЯ</span>
+    <span>ТУРНИРЫ</span>
+    <span>ВЫЕЗДНЫЕ ИГРЫ</span>
+  </div>
+</div>
+
+<!-- ============================================
+     ПОЛИГОНЫ
+     ============================================ -->
+<section class="section">
+  <div class="section-head">
+    <div>
+      <div class="section-num">// 01 — ЛОКАЦИИ</div>
+      <h2 class="section-title">ТРИ<br><em>ПОЛИГОНА</em></h2>
+    </div>
+    <p class="section-meta">
+      Оборудованные площадки в черте города и загородная база.
+      Бронируй — или зови нас к себе.
+    </p>
+  </div>
+
+  <div class="fields">
+    <div class="field">
+      <div class="field-top">
+        <div class="field-id">POLYGON_01</div>
+        <div class="field-live"><span class="dot"></span>LIVE</div>
+      </div>
+      <div class="field-bottom">
+        <div class="field-name">УРАЛМАШ</div>
+        <div class="field-addr">ул. Республиканская, 1А</div>
+      </div>
+      <div class="field-arrow">→</div>
+    </div>
+
+    <div class="field">
+      <div class="field-top">
+        <div class="field-id">POLYGON_02</div>
+        <div class="field-live"><span class="dot"></span>LIVE</div>
+      </div>
+      <div class="field-bottom">
+        <div class="field-name">ЭЛЬМАШ</div>
+        <div class="field-addr">ул. Шефская, 120</div>
+      </div>
+      <div class="field-arrow">→</div>
+    </div>
+
+    <div class="field">
+      <div class="field-top">
+        <div class="field-id">POLYGON_03</div>
+        <div class="field-live"><span class="dot"></span>LIVE</div>
+      </div>
+      <div class="field-bottom">
+        <div class="field-name">ЗЕНИТ</div>
+        <div class="field-addr">Загородный комплекс</div>
+      </div>
+      <div class="field-arrow">→</div>
+    </div>
+
+    <div class="trip">
+      <div>
+        <h3>ПРИЕДЕМ <em>К ТЕБЕ</em></h3>
+        <p>
+          Организуем пейнтбол или лазертаг на территории заказчика —
+          по всей Свердловской области. Привозим оборудование, ставим
+          полигон, проводим инструктаж и судим игру.
+        </p>
+      </div>
+      <a href="tel:+73433722772" class="btn" style="align-self:end">
+        <span>ОБСУДИТЬ ВЫЕЗД <span class="btn-arrow">→</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     ТАРИФЫ
+     ============================================ -->
+<section class="section" style="background:var(--bg-2)">
+  <div class="section-head">
+    <div>
+      <div class="section-num">// 02 — ТАРИФЫ</div>
+      <h2 class="section-title">ВЫБЕРИ<br><em>ФОРМАТ</em></h2>
+    </div>
+    <p class="section-meta">
+      Докупка шаров — 4 ₽ / шт.
+      Точную стоимость уточняйте по телефону.
+    </p>
+  </div>
+
+  <div class="tariffs">
+    <div class="tariff">
+      <div class="tariff-name">БАЗОВЫЙ</div>
+      <div class="tariff-price">
+        <small>ОТ / ЧЕЛ</small>
+        400<span style="font-size:.5em">₽</span>
+      </div>
+      <ul class="tariff-list">
+        <li>Лазертаг / пейнтбол</li>
+        <li>Экипировка включена</li>
+        <li>Маркер + маска</li>
+        <li>Инструктаж</li>
+      </ul>
+    </div>
+
+    <div class="tariff hit">
+      <div class="tariff-tag">ХИТ</div>
+      <div class="tariff-name">МЕГА</div>
+      <div class="tariff-price">
+        <small>ОТ / ЧЕЛ</small>
+        1000<span style="font-size:.5em">₽</span>
+      </div>
+      <ul class="tariff-list">
+        <li>200 шаров в комплекте</li>
+        <li>1 час · до 6 раундов</li>
+        <li>Полная экипировка</li>
+        <li>Судья на поле</li>
+      </ul>
+    </div>
+
+    <div class="tariff">
+      <div class="tariff-name">УЛЬТРА</div>
+      <div class="tariff-price">
+        <small>ДО / ЧЕЛ</small>
+        1350<span style="font-size:.5em">₽</span>
+      </div>
+      <ul class="tariff-list">
+        <li>Расширенный пакет шаров</li>
+        <li>Несколько часов игры</li>
+        <li>Приоритетное поле</li>
+        <li>Фотоотчёт</li>
+      </ul>
+    </div>
+
+    <div class="tariff">
+      <div class="tariff-name">СВОЯ ИГРА</div>
+      <div class="tariff-price">
+        <small>ИНДИВИДУАЛЬНО</small>
+        ∞
+      </div>
+      <ul class="tariff-list">
+        <li>Свой сценарий</li>
+        <li>Своя дата и время</li>
+        <li>Выезд на точку</li>
+        <li>Корпоративы, ДР, турниры</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     КАЛЬКУЛЯТОР
+     ============================================ -->
+<section class="section">
+  <div class="section-head">
+    <div>
+      <div class="section-num">// 03 — РАСЧЁТ</div>
+      <h2 class="section-title">СОБЕРИ<br><em>СВОЮ ИГРУ</em></h2>
+    </div>
+    <p class="section-meta">
+      Предварительный расчёт.
+      Финальную стоимость подтверждаем по телефону.
+    </p>
+  </div>
+
+  <div class="calc">
+    <div class="calc-left">
+      <div class="calc-row">
+        <div class="calc-label">ИГРОКИ <b id="v-players">10</b></div>
+        <input type="range" min="4" max="40" value="10" id="players">
+      </div>
+      <div class="calc-row">
+        <div class="calc-label">ЧАСЫ <b id="v-hours">2</b></div>
+        <input type="range" min="1" max="6" value="2" id="hours">
+      </div>
+      <div class="calc-row">
+        <div class="calc-label">ШАРЫ (×100) <b id="v-balls">5</b></div>
+        <input type="range" min="1" max="20" value="5" id="balls">
+      </div>
+    </div>
+
+    <div class="calc-right">
+      <div class="calc-price">
+        <small>ПРЕДВАРИТЕЛЬНО</small>
+        <span id="price">0</span> ₽
+      </div>
+      <a href="tel:+73433722772" class="btn">
+        <span>ЗАБРОНИРОВАТЬ <span class="btn-arrow">→</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     CTA
+     ============================================ -->
+<section class="cta">
+  <h2>ГОТОВ<br>К <em>БОЮ?</em></h2>
+  <a href="tel:+73433722772" class="cta-phone">+7 (343) 372-27-72</a>
+  <div style="position:relative;z-index:2">
+    <a href="tel:+73433722772" class="btn">
+      <span>ПОЗВОНИТЬ СЕЙЧАС <span class="btn-arrow">→</span></span>
+    </a>
+  </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer class="footer">
+  <div>
+    <div class="footer-brand">ВАРЯГ<span>_</span></div>
+    <p style="max-width:320px;line-height:1.9">
+      Пейнтбольный клуб в Екатеринбурге.<br>
+      Тактические игры с 2010 года.
+    </p>
+  </div>
+
+  <div class="footer-col">
+    <h4>Полигоны</h4>
+    <p>Республиканская, 1А<br>Уралмаш</p>
+    <p>Шефская, 120<br>Эльмаш</p>
+    <p>Комплекс «Зенит»</p>
+  </div>
+
+  <div class="footer-col">
+    <h4>Контакты</h4>
+    <p><a href="tel:+73433722772">+7 343 372-27-72</a></p>
+    <p>Приём заявок — 24/7</p>
+    <p><a href="https://vk.com">ВКонтакте →</a></p>
+  </div>
+
+  <div class="footer-col">
+    <h4>Форматы</h4>
+    <p>Пейнтбол · Лазертаг</p>
+    <p>Корпоративы · ДР</p>
+    <p>Турниры · Своя игра</p>
+    <p>Выездные игры</p>
+  </div>
+
+  <div class="footer-bottom">
+    <span>// ВАРЯГ · ЕКАТЕРИНБУРГ</span>
+    <span>ПРИЁМ-ПРИЁМ · 24/7</span>
+  </div>
+</footer>
+
+<script>
+/* ============ КУРСОР ============ */
+const cursor = document.getElementById('cursor');
+let mx = 0, my = 0, cx = 0, cy = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function loop(){
+  cx += (mx - cx) * .18;
+  cy += (my - cy) * .18;
+  cursor.style.left = cx + 'px';
+  cursor.style.top  = cy + 'px';
+  requestAnimationFrame(loop);
+}
+loop();
+
+document.querySelectorAll('a, button, .field, .tariff, input, .trip').forEach(el=>{
+  el.addEventListener('mouseenter',()=>cursor.classList.add('hover'));
+  el.addEventListener('mouseleave',()=>cursor.classList.remove('hover'));
+});
+
+/* ============ КАЛЬКУЛЯТОР ============ */
+const players = document.getElementById('players');
+const hours   = document.getElementById('hours');
+const balls   = document.getElementById('balls');
+const priceEl = document.getElementById('price');
+
+function calc(){
+  const p = +players.value, h = +hours.value, b = +balls.value;
+  document.getElementById('v-players').textContent = p;
+  document.getElementById('v-hours').textContent   = h;
+  document.getElementById('v-balls').textContent   = b;
+
+  const total = p * 400 + h * 1500 + b * 400;
+
+  let cur = +priceEl.textContent.replace(/\s/g,'') || 0;
+  const step = (total - cur) / 16;
+  let i = 0;
+  const t = setInterval(()=>{
+    cur += step;
+    priceEl.textContent = Math.round(cur).toLocaleString('ru');
+    if(++i >= 16) clearInterval(t);
+  }, 16);
+}
+[players,hours,balls].forEach(el=>el.addEventListener('input',calc));
+calc();
+
+/* ============ МАРКИЗА — бесконечная ============ */
+const track = document.querySelector('.marquee-track');
+track.innerHTML += track.innerHTML;
+
+/* ============ ПАРАЛЛАКС HERO ============ */
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const grid = document.querySelector('.hero-grid-lines');
+  if(grid) grid.style.transform = `translateY(${y * .3}px)`;
+});
+</script>
+</body>
+</html>
